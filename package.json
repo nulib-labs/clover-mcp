@@ -1,0 +1,41 @@
+{
+  "name": "@nulib/clover-mcp",
+  "version": "0.1.0",
+  "type": "module",
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "description": "",
+  "main": "dist/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "scripts": {
+    "build": "npm run build:ui && vite build --config src/vite.config.ts",
+    "build:ui": "vite build --config viewer/vite.config.ts",
+    "build:watch": "vite build --config viewer/vite.config.ts --watch"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/ext-apps": "^1.2.0",
+    "@modelcontextprotocol/sdk": "^1.27.1"
+  },
+  "devDependencies": {
+    "@samvera/clover-iiif": "^3.3.8",
+    "@types/node": "^25.3.5",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.56.1",
+    "@typescript-eslint/parser": "^8.56.1",
+    "@vitejs/plugin-react": "^4.0.0",
+    "eslint": "^10.0.2",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1",
+    "vite-plugin-singlefile": "^2.3.0"
+  }
+}
