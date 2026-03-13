@@ -7,7 +7,8 @@
   "license": "MIT",
   "description": "",
   "files": [
-    "dist"
+    "dist",
+    "LICENSE"
   ],
   "main": "dist/index.js",
   "exports": {
