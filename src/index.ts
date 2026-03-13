@@ -4,6 +4,7 @@ import {
   RegisteredTool,
   ToolCallback
 } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { ResourceMetadata } from "@modelcontextprotocol/ext-apps/server";
 import html from "virtual:inline-html";
 
@@ -20,6 +21,9 @@ type CloverUIResourceResult = {
   config: ResourceMetadata;
   handler: ReadResourceCallback;
 };
+
+type ToolConfig = Record<string, unknown>;
+type HasMeta = ToolConfig | CallToolResult;
 
 export class CloverUIResource {
   constructor(public opts: CloverUIResourceOpts) {
@@ -63,14 +67,15 @@ export class CloverUIResource {
     return result;
   }
 
-  addResourceMeta(content: any): any {
+  //eslint-disable-next-line @typescript-eslint/no-explicit-any
+  addResourceMeta(content: HasMeta): any {
     const { resourceUri } = this.opts;
     const result = { ...content };
-    result._meta ||= {};
-    result._meta.ui ||= {};
-    result._meta.ui.resourceUri = resourceUri;
-    result._meta["ui/resourceUri"] = resourceUri;
-    return result;
+    const meta = { ...(result._meta || {}) } as any; //eslint-disable-line @typescript-eslint/no-explicit-any
+    meta.ui ||= {};
+    meta.ui.resourceUri = resourceUri;
+    meta["ui/resourceUri"] = resourceUri;
+    return { ...result, _meta: meta };
   }
 
   wrapToolCallback(cb: ToolCallback): ToolCallback {
@@ -88,7 +93,7 @@ export class CloverUIResource {
   registerTool(
     server: McpServer,
     toolName: string,
-    toolConfig: Record<any, any>,
+    toolConfig: ToolConfig,
     cb: ToolCallback
   ): RegisteredTool {
     return server.registerTool(

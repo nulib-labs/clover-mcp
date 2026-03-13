@@ -154,3 +154,4 @@ samconfig.toml
 samconfig.yaml
 
 # End of https://www.toptal.com/developers/gitignore/api/sam+config,node
+examples/local-server/package-lock.json

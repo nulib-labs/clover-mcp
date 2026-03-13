@@ -1,0 +1,17 @@
+name: Run  Tests
+on: push
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 24.x
+          cache: "npm"
+          cache-dependency-path: "package-lock.json"
+      - run: npm ci && npm i --prefix examples/local-server
+      - name: Check code style
+        run: npm run lint
+      - name: Run tests
+        run: npm test
