@@ -4,7 +4,7 @@ A Node.js package that provides a ready-to-use [Clover IIIF Viewer](https://samv
 
 ## Overview
 
-This package bundles a generic MCP UI resource that integrates the Samvera Clover IIIF viewer, making it easy to add IIIF content visualization capabilities to your MCP server with a single function call.
+This package bundles a generic MCP UI resource that integrates the Samvera Clover IIIF viewer, making it easy to add IIIF content visualization capabilities to your MCP server. The `CloverUIResource` class handles resource registration and automatically wires up your tools to use the embedded viewer.
 
 ## Installation
 
@@ -18,20 +18,31 @@ npm install @nulib/clover-mcp
 
 ```typescript
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { registerCloverUIResource } from "@nulib/clover-mcp";
+import { CloverUIResource } from "@nulib/clover-mcp";
 
 const server = new McpServer({
   name: "my-mcp-server",
   version: "1.0.0"
 });
 
-// Register the Clover UI resource
-registerCloverUIResource(server, {
+// Create a Clover UI resource
+const uiResource = new CloverUIResource({
   resourceUri: "ui://my-server/viewer",
   description: "UI resource for viewing IIIF content",
   resourceDomains: ["https://iiif.example.org"],
   connectDomains: ["https://api.example.org"]
 });
+
+// Register tools that use this resource
+uiResource.registerTool(
+  server,
+  "my-tool",
+  { /* tool config */ },
+  async (args) => { /* tool handler */ }
+);
+
+// Register the resource with the server
+uiResource.registerResource(server);
 ```
 
 ### Complete Example with Tool
@@ -41,7 +52,7 @@ Here's a complete example showing how to embed the viewer resource with a tool t
 ```typescript
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { registerCloverUIResource } from "@nulib/clover-mcp";
+import { CloverUIResource } from "@nulib/clover-mcp";
 
 const UI_RESOURCE_URI = "ui://dc-viewer/viewer";
 const DC_API_ORIGIN = "https://api.dc.library.northwestern.edu";
@@ -53,22 +64,29 @@ const server = new McpServer({
   version: "1.0.0"
 });
 
-// Register the Clover UI resource
-registerCloverUIResource(server, {
+// Create a Clover UI resource
+const uiResource = new CloverUIResource({
   resourceUri: UI_RESOURCE_URI,
   description: "Northwestern Digital Collections viewer",
   resourceDomains: [DC_API_ORIGIN, DC_IIIF_ORIGIN],
   connectDomains: [DC_API_ORIGIN, DC_IIIF_ORIGIN]
 });
 
-// Define a tool that returns IIIF content
-server.tool(
+// Register a tool that returns IIIF content
+uiResource.registerTool(
+  server,
   "view-collection",
-  "Display a Northwestern Digital Collections IIIF collection in the Clover viewer",
   {
-    collectionId: {
-      type: "string",
-      description: "Northwestern Digital Collections collection ID"
+    description: "Display a Northwestern Digital Collections IIIF collection in the Clover viewer",
+    inputSchema: {
+      type: "object",
+      properties: {
+        collectionId: {
+          type: "string",
+          description: "Northwestern Digital Collections collection ID"
+        }
+      },
+      required: ["collectionId"]
     }
   },
   async ({ collectionId }) => {
@@ -92,6 +110,9 @@ server.tool(
   }
 );
 
+// Register the resource with the server
+uiResource.registerResource(server);
+
 // Start the server
 const transport = new StdioServerTransport();
 await server.connect(transport);
@@ -109,27 +130,53 @@ await server.callTool("view-collection", {
 
 ## API
 
-### `registerCloverUIResource(server, options)`
+### `CloverUIResource`
 
-Registers a Clover IIIF viewer UI resource with your MCP server.
+A class that manages a Clover IIIF viewer UI resource for your MCP server.
 
-#### Parameters
+#### Constructor
 
+```typescript
+new CloverUIResource(options: CloverUIResourceOpts)
+```
+
+**Options:**
+- **`resourceUri`** (string, required): The URI identifier for the UI resource (e.g., `"ui://my-server/viewer"`)
+- **`description`** (string, required): Human-readable description of the resource
+- **`resourceDomains`** (string[], optional): Array of domains allowed for loading resources (images, manifests) in the viewer's Content Security Policy
+- **`connectDomains`** (string[], optional): Array of domains allowed for API connections in the viewer's Content Security Policy
+
+#### Methods
+
+##### `registerTool(server, toolName, toolConfig, callback)`
+
+Registers a tool with the MCP server that will use this UI resource.
+
+**Parameters:**
 - **`server`** (`McpServer`): Your MCP server instance
-- **`options`** (`CloverUIResourceOpts`):
-  - **`resourceUri`** (string, required): The URI identifier for the UI resource (e.g., `"ui://my-server/viewer"`)
-  - **`description`** (string, required): Human-readable description of the resource
-  - **`resourceDomains`** (string[], optional): Array of domains allowed for loading resources (images, manifests) in the viewer's Content Security Policy
-  - **`connectDomains`** (string[], optional): Array of domains allowed for API connections in the viewer's Content Security Policy
+- **`toolName`** (string): Name of the tool
+- **`toolConfig`** (object): Tool configuration including description and inputSchema
+- **`callback`** (`ToolCallback`): Tool handler function that returns results with `iiifContentUrl` in `structuredContent`
+
+**Returns:** `RegisteredTool`
+
+##### `registerResource(server)`
+
+Registers the UI resource with the MCP server. Call this after registering all tools.
+
+**Parameters:**
+- **`server`** (`McpServer`): Your MCP server instance
 
 ## How It Works
 
 1. The package bundles a React-based Clover IIIF viewer as a single HTML file
-2. When registered, it creates an MCP app resource with proper CSP configuration
-3. Your MCP tools return results containing:
+2. Create a `CloverUIResource` instance with your resource configuration
+3. Register tools using `registerTool()` - this automatically adds the UI resource metadata to your tools
+4. Call `registerResource()` to register the viewer resource with the MCP server
+5. Your tools return results containing:
    - A `resource` reference to the UI resource URI in the `content` array
    - A `iiifContentUrl` in the `structuredContent` object pointing to a valid IIIF manifest or collection
-4. The viewer automatically displays the IIIF content when tool results are received
+6. The viewer automatically displays the IIIF content when tool results are received
 
 ## Development
 
