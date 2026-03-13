@@ -30,7 +30,7 @@ const uiResource = new CloverUIResource({
   resourceUri: "ui://my-server/viewer",
   description: "UI resource for viewing IIIF content",
   resourceDomains: ["https://iiif.example.org"],
-  connectDomains: ["https://api.example.org"]
+  connectDomains: ["https://api.example.org", "https://iiif.example.org"]
 });
 
 // Register tools that use this resource
@@ -186,7 +186,26 @@ Registers the UI resource with the MCP server. Call this after registering all t
 npm run build
 ```
 
-This builds both the viewer UI and the main package.
+This builds both the viewer UI and the main package. It also emits a runnable
+local stdio server at `dist/local-server.js` for MCP client configuration.
+
+### Local Claude Configuration
+
+After building, point Claude Desktop at the local server entrypoint:
+
+```json
+{
+  "mcpServers": {
+    "clover-local": {
+      "command": "/path/to/clover-mcp/examples/local-server/bin/run.sh",
+    }
+  }
+}
+```
+
+The local server exposes a `view_iiif_content` tool and allows Northwestern's
+Digital Collections IIIF origins by default. To allow different origins, set
+`CLOVER_ALLOWED_ORIGINS` to a comma-separated list of `https://...` origins.
 
 ### Watch Mode
 

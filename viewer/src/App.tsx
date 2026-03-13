@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { CallToolResult } from "@modelcontextprotocol/sdk";
 import { useApp, useHostStyles } from "@modelcontextprotocol/ext-apps/react";
-import Viewer from "@samvera/clover-iiif/viewer";
+import CloverIIIF from "@samvera/clover-iiif";
 
 declare const __CLOVER_VERSION__: string;
 
@@ -11,7 +12,7 @@ export default function App() {
     appInfo: { name: "Clover IIIF Viewer", version: __CLOVER_VERSION__ },
     capabilities: {},
     onAppCreated: (app) => {
-      app.ontoolresult = (result: any) => {
+      app.ontoolresult = (result: CallToolResult) => {
         setContentUrl(result.structuredContent.iiifContentUrl);
       };
     }
@@ -24,7 +25,7 @@ export default function App() {
   if (!contentUrl) return <div>Waiting for tool result...</div>;
   return (
     <>
-      <Viewer iiifContent={contentUrl} />
+      <CloverIIIF id={contentUrl} />
     </>
   );
 }
