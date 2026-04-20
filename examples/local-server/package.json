@@ -4,6 +4,7 @@
   "type": "module",
   "description": "Full example server for clover-mcp component",
   "main": "index.js",
+  "private": true,
   "scripts": {
     "start": "vite-node index.ts",
     "build": "vite build --config ./vite.config.ts"

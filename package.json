@@ -6,6 +6,9 @@
   "author": "",
   "license": "MIT",
   "description": "",
+  "workspaces": [
+    "./examples/local-server"
+  ],
   "files": [
     "dist",
     "LICENSE"
@@ -25,7 +28,8 @@
     "prebuild": "npm run build:ui",
     "prepare": "npm run build",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "version": "npm version $npm_new_version --workspace=examples/local-server --no-git-tag-version && git add examples/local-server/package.json"
   },
   "dependencies": {
     "@modelcontextprotocol/ext-apps": "^1.2.0",
