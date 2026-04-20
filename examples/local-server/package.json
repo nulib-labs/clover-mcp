@@ -1,6 +1,6 @@
 {
   "name": "clover-mcp-server",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "type": "module",
   "description": "Full example server for clover-mcp component",
   "main": "index.js",
