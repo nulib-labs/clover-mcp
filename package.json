@@ -5,6 +5,10 @@
   "keywords": [],
   "author": "",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nulib-labs/clover-mcp.git"
+  },
   "description": "",
   "workspaces": [
     "./examples/local-server"
