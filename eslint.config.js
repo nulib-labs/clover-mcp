@@ -10,6 +10,7 @@ export default defineConfig(
   {
     ignores: [
       "dist",
+      "**/dist",
       "viewer/dist",
     ]
   },
