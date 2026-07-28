@@ -1,5 +1,5 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { McpServer } from "@modelcontextprotocol/server";
+import { serveStdio } from "@modelcontextprotocol/server/stdio";
 import * as z from "zod/v4";
 import { CloverUIResource } from "@nulib/clover-mcp";
 
@@ -54,14 +54,14 @@ export const createLocalServer = (env: NodeJS.ProcessEnv = process.env) => {
     LOCAL_TOOL_NAME,
     {
       description: "Display a IIIF manifest or collection in the Clover viewer",
-      inputSchema: {
+      inputSchema: z.object({
         iiifContentUrl: z
           .string()
           .url()
           .describe(
             "Absolute http(s) URL for the IIIF manifest or collection to display"
           )
-      }
+      })
     },
     async ({ iiifContentUrl }) => {
       const url = new URL(iiifContentUrl);
@@ -90,10 +90,7 @@ export const createLocalServer = (env: NodeJS.ProcessEnv = process.env) => {
 export const startLocalServer = async (
   env: NodeJS.ProcessEnv = process.env
 ) => {
-  const server = createLocalServer(env);
-  const transport = new StdioServerTransport();
-
-  await server.connect(transport);
+  serveStdio(() => createLocalServer(env));
   console.error(`${LOCAL_SERVER_NAME} ready`);
 };
 

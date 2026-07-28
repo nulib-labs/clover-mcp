@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
+import { Client, InMemoryTransport } from "@modelcontextprotocol/client";
 import {
   createLocalServer,
   LOCAL_TOOL_NAME,
@@ -39,6 +38,15 @@ describe("CloverUIResource integration", () => {
     expect(resources.resources).toHaveLength(1);
     expect(resources.resources[0].uri).toBe(LOCAL_UI_RESOURCE_URI);
     expect(resources.resources[0].mimeType).toBe("text/html");
+
+    // Test reading the UI resource (2026-07-28: contents echo the request URI)
+    const resource = await client.readResource({ uri: LOCAL_UI_RESOURCE_URI });
+    expect(resource.contents).toHaveLength(1);
+    expect(resource.contents[0].uri).toBe(LOCAL_UI_RESOURCE_URI);
+    expect(resource.contents[0].mimeType).toBe("text/html;profile=mcp-app");
+    expect(resource.contents[0]._meta?.ui?.csp?.resourceDomains).toContain(
+      "https://api.dc.library.northwestern.edu"
+    );
 
     // Test calling the tool
     const result = await client.callTool({
