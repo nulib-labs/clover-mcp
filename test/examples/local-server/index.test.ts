@@ -28,9 +28,6 @@ describe("CloverUIResource integration", () => {
     const tools = await client.listTools();
     expect(tools.tools).toHaveLength(1);
     expect(tools.tools[0].name).toBe(LOCAL_TOOL_NAME);
-    expect(tools.tools[0]._meta?.["ui/resourceUri"]).toBe(
-      LOCAL_UI_RESOURCE_URI
-    );
     expect(tools.tools[0]._meta?.ui?.resourceUri).toBe(LOCAL_UI_RESOURCE_URI);
 
     // Test that resources are exposed correctly
@@ -56,7 +53,7 @@ describe("CloverUIResource integration", () => {
     expect(result.structuredContent?.iiifContentUrl).toBe(
       "https://example.org/manifest.json"
     );
-    expect(result._meta?.["ui/resourceUri"]).toBe(LOCAL_UI_RESOURCE_URI);
+    expect(result._meta?.ui?.resourceUri).toBe(LOCAL_UI_RESOURCE_URI);
 
     // Clean up
     await client.close();

@@ -110,8 +110,7 @@ describe("CloverUIResource", () => {
         _meta: {
           ui: {
             resourceUri: "ui://example/viewer"
-          },
-          "ui/resourceUri": "ui://example/viewer"
+          }
         }
       },
       expect.any(Function)
@@ -153,8 +152,7 @@ describe("CloverUIResource", () => {
       _meta: {
         ui: {
           resourceUri: "ui://example/viewer"
-        },
-        "ui/resourceUri": "ui://example/viewer"
+        }
       }
     });
   });

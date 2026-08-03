@@ -83,7 +83,6 @@ export class CloverUIResource {
     const meta = { ...(result._meta || {}) } as any; //eslint-disable-line @typescript-eslint/no-explicit-any
     meta.ui ||= {};
     meta.ui.resourceUri = resourceUri;
-    meta["ui/resourceUri"] = resourceUri;
     return { ...result, _meta: meta };
   }
 
