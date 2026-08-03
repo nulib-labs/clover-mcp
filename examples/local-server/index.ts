@@ -70,16 +70,22 @@ export const createLocalServer = (env: NodeJS.ProcessEnv = process.env) => {
         throw new Error("iiifContentUrl must be an absolute http(s) URL");
       }
 
+      const structuredContent = {
+        iiifContentUrl
+      };
+
       return {
         content: [
           {
             type: "text",
             text: `Opening Clover viewer for ${iiifContentUrl}`
+          },
+          {
+            type: "text",
+            text: JSON.stringify(structuredContent)
           }
         ],
-        structuredContent: {
-          iiifContentUrl
-        }
+        structuredContent
       };
     }
   );

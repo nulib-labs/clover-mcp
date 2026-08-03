@@ -101,8 +101,26 @@ export default function App() {
     appInfo: { name: "Clover IIIF Viewer", version: __CLOVER_VERSION__ },
     capabilities: {},
     onAppCreated: (app) => {
+      console.debug("[clover-mcp] app created");
       app.ontoolresult = (result: CallToolResult) => {
-        setContentUrl(result.structuredContent?.iiifContentUrl);
+        console.debug("[clover-mcp] tool result:", result);
+        if (result.structuredContent?.iiifContentUrl) {
+          setContentUrl(result.structuredContent?.iiifContentUrl);
+        } else {
+          for (const contentItem of result.content) {
+            if (contentItem.type === "text") {
+              try {
+                const structuredContent = JSON.parse(contentItem.text);
+                if (structuredContent?.iiifContentUrl) {
+                  setContentUrl(structuredContent.iiifContentUrl);
+                  break;
+                }
+              } catch {
+                // Ignore JSON parse errors and continue to the next content item
+              }
+            }
+          }
+        }
       };
     }
   });
@@ -186,6 +204,7 @@ export default function App() {
 
   if (!contentUrl) return <div>Waiting for tool result...</div>;
   if (!viewerContent) return <div>Loading IIIF content...</div>;
+
   return (
     <div className="clover-mcp-viewer">
       <Viewer iiifContent={viewerContent} />

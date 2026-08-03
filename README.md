@@ -93,20 +93,22 @@ const createServer = () => {
     async ({ collectionId }) => {
       const collectionUrl = `${DC_API_ORIGIN}/api/v2/collections/${collectionId}?as=iiif`;
 
+      const structuredContent = {
+        iiifContentUrl: collectionUrl
+      };
+
       return {
         content: [
           {
             type: "text",
-            text: `Viewing Northwestern Digital Collections collection ${collectionId}`
+            text: JSON.stringify(structuredContent)
           },
           {
             type: "resource",
             resource: UI_RESOURCE_URI
           }
         ],
-        structuredContent: {
-          iiifContentUrl: collectionUrl
-        }
+        structuredContent
       };
     }
   );
@@ -180,6 +182,8 @@ Registers the UI resource with the MCP server. Call this after registering all t
 5. Your tools return results containing:
    - A `resource` reference to the UI resource URI in the `content` array
    - A `iiifContentUrl` in the `structuredContent` object pointing to a valid IIIF manifest or collection
+   - A `text` block containing a stringified copy of the `structuredContent` (as a backup, since some MCP 
+     App hosts don't pass `structuredContent` correctly)
 6. The viewer automatically displays the IIIF content when tool results are received
 
 ## Development

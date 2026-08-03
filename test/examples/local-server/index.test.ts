@@ -50,6 +50,15 @@ describe("CloverUIResource integration", () => {
       name: LOCAL_TOOL_NAME,
       arguments: { iiifContentUrl: "https://example.org/manifest.json" }
     });
+    expect(result.content).toHaveLength(2);
+    expect(result.content[0].type).toBe("text");
+    expect(result.content[0].text).toBe(
+      "Opening Clover viewer for https://example.org/manifest.json"
+    );
+    expect(result.content[1].type).toBe("text");
+    expect(JSON.parse(result.content[1].text)).toEqual(
+      result.structuredContent
+    );
     expect(result.structuredContent?.iiifContentUrl).toBe(
       "https://example.org/manifest.json"
     );
