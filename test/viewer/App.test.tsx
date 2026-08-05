@@ -153,6 +153,48 @@ describe("App", () => {
     );
   });
 
+  it("wires ontoolresult to update the content URL from text content if structured content is not present", () => {
+    const setContentUrl = vi.fn();
+    const app: {
+      getHostContext: ReturnType<typeof vi.fn>;
+      ontoolresult?: (result: any) => void; // eslint-disable-line @typescript-eslint/no-explicit-any
+    } = {
+      getHostContext: vi.fn(() => undefined)
+    };
+
+    mockState([
+      [null, setContentUrl],
+      [null, vi.fn()],
+      [null, vi.fn()],
+      [null, vi.fn()]
+    ]);
+    extAppMocks.useApp.mockImplementation(({ onAppCreated }) => {
+      onAppCreated(app as any); //eslint-disable-line @typescript-eslint/no-explicit-any
+      return { app, error: null };
+    });
+
+    App();
+
+    expect(typeof app.ontoolresult).toBe("function");
+
+    app.ontoolresult?.({
+      content: [
+        {
+          type: "text",
+          text: "Human readable content"
+        },
+        {
+          type: "text",
+          text: '{"iiifContentUrl":"https://iiif.example.org/manifest"}'
+        }
+      ]
+    });
+
+    expect(setContentUrl).toHaveBeenCalledWith(
+      "https://iiif.example.org/manifest"
+    );
+  });
+
   it("renders the Clover viewer once viewer content is available", () => {
     const app = {
       getHostContext: vi.fn(() => undefined)

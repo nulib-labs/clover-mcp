@@ -1,11 +1,12 @@
-import {
+import type {
+  CallToolResult,
+  CacheHint,
   McpServer,
   ReadResourceCallback,
   RegisteredTool,
+  ResourceMetadata,
   ToolCallback
-} from "@modelcontextprotocol/sdk/server/mcp.js";
-import { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
-import { ResourceMetadata } from "@modelcontextprotocol/ext-apps/server";
+} from "@modelcontextprotocol/server";
 import html from "virtual:inline-html";
 
 export type CloverUIResourceOpts = {
@@ -13,6 +14,7 @@ export type CloverUIResourceOpts = {
   resourceUri: string;
   resourceDomains?: string[];
   connectDomains?: string[];
+  cacheHint?: CacheHint;
 };
 
 type CloverUIResourceResult = {
@@ -25,6 +27,11 @@ type CloverUIResourceResult = {
 type ToolConfig = Record<string, unknown>;
 type HasMeta = ToolConfig | CallToolResult;
 
+const DEFAULT_CACHE_HINT: CacheHint = {
+  ttlMs: 3_600_000,
+  cacheScope: "public"
+};
+
 export class CloverUIResource {
   constructor(public opts: CloverUIResourceOpts) {
     this.opts = opts;
@@ -35,20 +42,22 @@ export class CloverUIResource {
       description,
       resourceUri,
       resourceDomains = [],
-      connectDomains = []
+      connectDomains = [],
+      cacheHint = DEFAULT_CACHE_HINT
     } = this.opts;
     const result: CloverUIResourceResult = {
       name: resourceUri,
       uri: resourceUri,
       config: {
         description,
-        mimeType: "text/html"
+        mimeType: "text/html",
+        cacheHint
       },
       handler: async () => {
         return {
           contents: [
             {
-              uri: "ui://clover-viewer/mcp-app.html",
+              uri: resourceUri,
               text: html,
               mimeType: "text/html;profile=mcp-app",
               _meta: {
@@ -74,13 +83,12 @@ export class CloverUIResource {
     const meta = { ...(result._meta || {}) } as any; //eslint-disable-line @typescript-eslint/no-explicit-any
     meta.ui ||= {};
     meta.ui.resourceUri = resourceUri;
-    meta["ui/resourceUri"] = resourceUri;
     return { ...result, _meta: meta };
   }
 
   wrapToolCallback(cb: ToolCallback): ToolCallback {
-    return async (args) => {
-      const toolResult = await cb(args);
+    return async (...params: Parameters<ToolCallback>) => {
+      const toolResult = await cb(...params);
       return this.addResourceMeta(toolResult);
     };
   }

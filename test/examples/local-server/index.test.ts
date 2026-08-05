@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
+import { Client, InMemoryTransport } from "@modelcontextprotocol/client";
 import {
   createLocalServer,
   LOCAL_TOOL_NAME,
@@ -29,9 +28,6 @@ describe("CloverUIResource integration", () => {
     const tools = await client.listTools();
     expect(tools.tools).toHaveLength(1);
     expect(tools.tools[0].name).toBe(LOCAL_TOOL_NAME);
-    expect(tools.tools[0]._meta?.["ui/resourceUri"]).toBe(
-      LOCAL_UI_RESOURCE_URI
-    );
     expect(tools.tools[0]._meta?.ui?.resourceUri).toBe(LOCAL_UI_RESOURCE_URI);
 
     // Test that resources are exposed correctly
@@ -40,15 +36,33 @@ describe("CloverUIResource integration", () => {
     expect(resources.resources[0].uri).toBe(LOCAL_UI_RESOURCE_URI);
     expect(resources.resources[0].mimeType).toBe("text/html");
 
+    // Test reading the UI resource (2026-07-28: contents echo the request URI)
+    const resource = await client.readResource({ uri: LOCAL_UI_RESOURCE_URI });
+    expect(resource.contents).toHaveLength(1);
+    expect(resource.contents[0].uri).toBe(LOCAL_UI_RESOURCE_URI);
+    expect(resource.contents[0].mimeType).toBe("text/html;profile=mcp-app");
+    expect(resource.contents[0]._meta?.ui?.csp?.resourceDomains).toContain(
+      "https://api.dc.library.northwestern.edu"
+    );
+
     // Test calling the tool
     const result = await client.callTool({
       name: LOCAL_TOOL_NAME,
       arguments: { iiifContentUrl: "https://example.org/manifest.json" }
     });
+    expect(result.content).toHaveLength(2);
+    expect(result.content[0].type).toBe("text");
+    expect(result.content[0].text).toBe(
+      "Opening Clover viewer for https://example.org/manifest.json"
+    );
+    expect(result.content[1].type).toBe("text");
+    expect(JSON.parse(result.content[1].text)).toEqual(
+      result.structuredContent
+    );
     expect(result.structuredContent?.iiifContentUrl).toBe(
       "https://example.org/manifest.json"
     );
-    expect(result._meta?.["ui/resourceUri"]).toBe(LOCAL_UI_RESOURCE_URI);
+    expect(result._meta?.ui?.resourceUri).toBe(LOCAL_UI_RESOURCE_URI);
 
     // Clean up
     await client.close();
