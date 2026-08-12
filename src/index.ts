@@ -9,6 +9,18 @@ import type {
 } from "@modelcontextprotocol/server";
 import html from "virtual:inline-html";
 
+export {
+  describeWork,
+  flattenLabel,
+  labelValues,
+  manifestIdFromContentState,
+  projectWork,
+  type IIIFLabel,
+  type IIIFResource,
+  type WorkMetadata,
+  type WorkSummary
+} from "./iiif";
+
 export type CloverUIResourceOpts = {
   description: string;
   resourceUri: string;
@@ -20,7 +32,13 @@ export type CloverUIResourceOpts = {
 type CloverUIResourceResult = {
   name: string;
   uri: string;
-  config: ResourceMetadata;
+  /**
+   * `McpServer.registerResource` takes `ResourceMetadata & { cacheHint? }` —
+   * `cacheHint` sits alongside the metadata rather than inside it, so the
+   * config type has to be widened the same way or the literal below trips an
+   * excess-property check.
+   */
+  config: ResourceMetadata & { cacheHint?: CacheHint };
   handler: ReadResourceCallback;
 };
 

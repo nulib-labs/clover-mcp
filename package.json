@@ -36,6 +36,7 @@
     "prepare": "npm run build",
     "test": "vitest run",
     "test:watch": "vitest",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p viewer/tsconfig.json",
     "version": "npm version $npm_new_version --workspace=examples/local-server --no-git-tag-version && git add examples/local-server/package.json"
   },
   "peerDependencies": {

@@ -13,5 +13,7 @@ jobs:
       - run: npm ci && npm i --prefix examples/local-server
       - name: Check code style
         run: npm run lint
+      - name: Check types
+        run: npm run typecheck
       - name: Run tests
         run: npm test

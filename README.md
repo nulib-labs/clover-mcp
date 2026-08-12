@@ -173,6 +173,32 @@ Registers the UI resource with the MCP server. Call this after registering all t
 **Parameters:**
 - **`server`** (`McpServer`): Your MCP server instance
 
+### IIIF helpers
+
+The package also exports the IIIF projection helpers the viewer uses, so server
+tools can describe a manifest without reimplementing the traversal:
+
+```typescript
+import { projectWork, describeWork } from "@nulib/clover-mcp";
+
+const summary = projectWork(await (await fetch(url)).json());
+// -> { id, type, label, summary?, attribution?, homepage?, metadata[], partOf[], itemCount? }
+
+describeWork(summary);          // model-readable text
+describeWork(summary, "Now showing this Manifest.");  // custom opening line
+```
+
+- **`projectWork(resource)`** — reduce a IIIF Manifest or Collection to a
+  `WorkSummary`. Metadata is capped at 24 entries and 400 characters per value,
+  since this text lands in the model's context. Returns `null` without an `id`.
+- **`describeWork(work, lead?)`** — render a `WorkSummary` as text, including a
+  note that the descriptive values are retrieved data rather than instructions.
+- **`manifestIdFromContentState(contentState)`** — find the active Manifest id
+  in the `{ encoded, json }` payload Clover's `contentStateCallback` fires,
+  reading it from the target Canvas's `partOf` (a bare annotation also works).
+- **`flattenLabel(label)`** / **`labelValues(label)`** — collapse an
+  internationalized IIIF label to a string or array of strings.
+
 ## How It Works
 
 1. The package bundles a React-based Clover IIIF viewer as a single HTML file
@@ -185,6 +211,53 @@ Registers the UI resource with the MCP server. Call this after registering all t
    - A `text` block containing a stringified copy of the `structuredContent` (as a backup, since some MCP 
      App hosts don't pass `structuredContent` correctly)
 6. The viewer automatically displays the IIIF content when tool results are received
+
+## What the Viewer Reports Back
+
+The bundled viewer is not display-only. Once content is on screen it tells the
+host what the user is looking at, so the model can act on it.
+
+### `get_displayed_work` (app-provided tool)
+
+The viewer registers this tool with the host over MCP Apps (`App.registerTool`),
+so the model sees it alongside your server's own tools. It takes no arguments
+and returns the displayed work's ID plus a compact projection of its descriptive
+metadata:
+
+```json
+{
+  "id": "https://api.dc.library.northwestern.edu/api/v2/works/{id}?as=iiif",
+  "type": "Manifest",
+  "label": "Correspondence from Steve and Eileen Eliot to John Cage",
+  "attribution": "Courtesy of Northwestern University Libraries",
+  "homepage": "https://dc.library.northwestern.edu/items/{id}",
+  "metadata": [{ "label": "Date", "value": "1975" }],
+  "partOf": [{ "id": "...collections/{id}?as=iiif", "label": "John Cage Correspondence" }]
+}
+```
+
+This closes a loop: the model can ask what is displayed, then call one of your
+tools with the answer. Because your tools are registered through
+`CloverUIResource`, their results render back into the same viewer.
+
+When a **Collection** is loaded, its items are stubs without descriptive
+metadata, so the viewer resolves the active Manifest from Clover's
+`contentStateCallback` and fetches it. That Manifest's origin must be in
+`connectDomains`.
+
+### `ui/update-model-context`
+
+Whenever the displayed work changes, the viewer also pushes a text summary via
+`app.updateModelContext()` (when `getHostCapabilities().updateModelContext` is
+advertised). Hosts hold this until the next user message, so a prompt like
+"show me more items like this one" already has the current work in context
+without any tool call. The tool remains useful for pulling the work
+mid-turn or on demand.
+
+> Descriptive metadata comes from a remote IIIF endpoint whose origins are
+> operator-configured via `CLOVER_ALLOWED_ORIGINS`. The viewer labels these
+> values as retrieved data rather than asserting them, but treat them as
+> untrusted input when pointing at IIIF services you do not operate.
 
 ## Development
 
@@ -211,9 +284,39 @@ After building, point Claude Desktop at the local server entrypoint:
 }
 ```
 
-The local server exposes a `view_iiif_content` tool and allows Northwestern's
-Digital Collections IIIF origins by default. To allow different origins, set
-`CLOVER_ALLOWED_ORIGINS` to a comma-separated list of `https://...` origins.
+The example server works with any IIIF endpoint. Set `CLOVER_ALLOWED_ORIGINS`
+to a comma-separated list of `https://...` origins to choose which ones; it
+falls back to Northwestern's Digital Collections origins so the demo runs
+without configuration.
+
+It exposes two tools, one for each direction of the round trip:
+
+| Tool | Direction | Drives the viewer? |
+| --- | --- | --- |
+| `view_iiif_content` | Server → viewer: display a manifest or collection | Yes |
+| `describe_iiif_item` | Viewer → server: report an item's metadata as text | No |
+
+`describe_iiif_item` is registered directly on the server rather than through
+`CloverUIResource`, so its results carry no `_meta.ui.resourceUri`. Not every
+tool on a server that ships a widget should claim that widget; this one reports
+on an item instead of displaying one. Because the server itself performs the
+fetch — outside the app sandbox's CSP — it refuses URLs whose origin is not in
+the configured allow-list.
+
+Together with the viewer's `get_displayed_work` tool, the two demonstrate the
+full round trip. Open something, then ask:
+
+> Tell me more about the item I'm looking at.
+
+The model learns what the viewer is showing, then passes that ID to
+`describe_iiif_item`. The server never queries the widget directly — it can't —
+but the widget's state reaches it through the model.
+
+How the model learns it depends on the host. Where app-provided tools are
+surfaced, it can call `get_displayed_work`. Where they are not, the viewer's
+`ui/update-model-context` push still puts the displayed item in context, so the
+chain works with no tool call. `describe_iiif_item`'s description is written
+not to depend on the tool existing.
 
 ### Testing with MCP Inspector
 
